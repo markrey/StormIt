@@ -4,17 +4,17 @@
   (:require [backtype.storm.thrift :as stormthrift])
   (:use [clojure.tools.macro]))
 
-(defn streamit-bolt* [prep-fn-var output-spec input-spec peek-cnt pop-cnt push-cnt args]
-  {:input-spec input-spec :output-spec output-spec :spout nil :bolt (StreamItBolt. (stormclj/to-spec prep-fn-var) args (stormthrift/mk-output-spec output-spec) (stormthrift/mk-output-spec input-spec) pop-cnt peek-cnt push-cnt)})
+(defn streamit-bolt* [name prep-fn-var output-spec input-spec peek-cnt pop-cnt push-cnt args]
+  {:type :bolt :name name :input-spec input-spec :output-spec output-spec :spout nil :bolt (StreamItBolt. (stormclj/to-spec prep-fn-var) args (stormthrift/mk-output-spec output-spec) (stormthrift/mk-output-spec input-spec) pop-cnt peek-cnt push-cnt)})
 
-(defmacro streamit-bolt [prep-fn-sym output-spec input-spec peek-cnt pop-cnt push-cnt args]
-  `(streamit-bolt* (var ~prep-fn-sym) ~output-spec ~input-spec ~peek-cnt ~pop-cnt ~push-cnt ~args))
+(defmacro streamit-bolt [name prep-fn-sym output-spec input-spec peek-cnt pop-cnt push-cnt args]
+  `(streamit-bolt* ~name (var ~prep-fn-sym) ~output-spec ~input-spec ~peek-cnt ~pop-cnt ~push-cnt ~args))
 
-(defn streamit-spout* [prep-fn-var output-spec push-cnt args]
-  {:output-spec output-spec :input-spec nil :bolt nil :spout (StreamItSpout. (stormclj/to-spec prep-fn-var) args (stormthrift/mk-output-spec output-spec) push-cnt)})
+(defn streamit-spout* [name prep-fn-var output-spec push-cnt args]
+  {:type :spout :name name :output-spec output-spec :input-spec nil :bolt nil :spout (StreamItSpout. (stormclj/to-spec prep-fn-var) args (stormthrift/mk-output-spec output-spec) push-cnt)})
 
-(defmacro streamit-spout [prep-fn-sym output-spec push-cnt args]
-  `(streamit-spout* (var ~prep-fn-sym) ~output-spec ~push-cnt ~args))
+(defmacro streamit-spout [name prep-fn-sym output-spec push-cnt args]
+  `(streamit-spout* ~name (var ~prep-fn-sym) ~output-spec ~push-cnt ~args))
 
 (defmacro spush [tuple]
   `(proxy-super ~'push ~tuple))
@@ -67,6 +67,9 @@
 ;; Most simple way to test is have pipeline emit clojure topology.
 ;;
 ;; How about just using vector
+(def sample-pipeline
+  [{:type :spout _ _} {:type :bolt _ _} {:type :split-join :split _ :join _ :bolt {:b :p} :or-bolt [:b :b :b _ _]}])
+
 (defmacro spipeline [name params & body]
   `(macrolet [(~'add [~'sf] `(~'~'swap!  ~'pipeline# (fn [~'p#] (~'~'into ~'p# [~~'sf]))))]
              (~'defn ~name ~(if params params []) (~'let [pipeline# (~'atom [])]
