@@ -20,4 +20,4 @@
 
 
 (defn -main []
-  (print (simple-app)))
+  (submit-local-stormit-app (simple-app)))

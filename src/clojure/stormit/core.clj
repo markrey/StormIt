@@ -88,9 +88,11 @@
 (defn run-local! [topology id]
   (let [cluster (local-cluster)]
     (.submitTopology cluster "" {TOPOLOGY-DEBUG true} topology)
-    (Thread/sleep 600000)
+    (Thread/sleep 30000)
     (.shutdown cluster)))
 
+(defn make-topology [app]
+  (thrift/mk-topology (:sapp app)))
 
 (defn submit-local-stormit-app [app]
   (let [topology (thrift/mk-topology (:sapp app))]

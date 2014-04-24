@@ -53,23 +53,23 @@
 ;; No error handling as of now.
 (defn mk-topology [prg]
   (if (identical? (:type (first prg)) :spout)
-    (let [builder (TopologyBuilder.)
-          prg-seq (lazy-seq prg)]
-      (loop [p (pop prg-seq)
-             curr-f (peek prg-seq)
+    (let [builder (TopologyBuilder.)]
+      (loop [p (rest prg)
+             curr-f (first prg)
              prev-f nil]
-        (cond
-         (is-spout? curr-f) (let [spout (:spout curr-f)
-                                  name (:name curr-f)]
-                              (-> builder (.setSpout name spout nil) (.addConfigurations {})))
-         (is-bolt? curr-f) (let [bolt (:bolt curr-f)
-                                 name (:name curr-f)
-                                 inputs (:input-spec curr-f)]
-                             (-> builder (.setBolt name bolt nil) (.addConfigurations {}) (route-pipeline prev-f)))
-         (is-splitjoin? curr-f) (let [])
-         :else (throw (RuntimeException. (str "Invalid filter type " (:type curr-f) "!"))))
-        (recur (pop p)
-               (peek p)
-               curr-f))
+        (if curr-f
+          (cond
+           (is-spout? curr-f) (let [spout (:spout curr-f)
+                                    name (:name curr-f)]
+                                (-> builder (.setSpout name spout nil) (.addConfigurations {})))
+           (is-bolt? curr-f) (let [bolt (:bolt curr-f)
+                                   name (:name curr-f)
+                                   inputs (:input-spec curr-f)]
+                               (-> builder (.setBolt name bolt nil) (.addConfigurations {}) (route-pipeline prev-f)))
+           (is-splitjoin? curr-f) (let [])
+           :else (throw (RuntimeException. (str "Invalid filter type " curr-f "!"))))
+          (recur (rest p)
+                 (first p)
+                 curr-f)))
       (.createTopology builder))
     (throw (RuntimeException. "Invalid StormIt application. There should be a source filter at the begining!"))))
