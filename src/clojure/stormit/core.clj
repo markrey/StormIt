@@ -3,6 +3,7 @@
   (:require [backtype.storm.clojure :as stormclj])
   (:require [backtype.storm.thrift :as stormthrift])
   (:require [stormit.thrift :as thrift])
+  (:use [backtype.storm config])
   (:use [clojure.tools.macro]))
 
 (defn streamit-bolt* [name prep-fn-var output-spec input-spec peek-cnt pop-cnt push-cnt args]
@@ -50,14 +51,14 @@
         definer (if (empty? input-spec)
                   (if (empty? params)
                     `(def ~name
-                       (streamit-spout ~prepare-fn-name ~output-spec ~(:push conf) []))
+                       (streamit-spout ~name ~prepare-fn-name ~output-spec ~(:push conf) []))
                     `(defn ~name [& args#]
-                       (streamit-spout ~prepare-fn-name ~output-spec ~(:push conf) args#)))
+                       (streamit-spout ~name ~prepare-fn-name ~output-spec ~(:push conf) args#)))
                   (if (empty? params)
                     `(def ~name
-                       (streamit-bolt ~prepare-fn-name ~output-spec ~input-spec ~(:peek conf) ~(:pop conf) ~(:push conf) []))
+                       (streamit-bolt ~name ~prepare-fn-name ~output-spec ~input-spec ~(:peek conf) ~(:pop conf) ~(:push conf) []))
                     `(defn ~name [& args#]
-                       (streamit-bolt ~prepare-fn-name ~output-spec ~input-spec ~(:peek conf) ~(:pop conf) ~(:push conf) args#))))]
+                       (streamit-bolt ~name ~prepare-fn-name ~output-spec ~input-spec ~(:peek conf) ~(:pop conf) ~(:push conf) args#))))]
     `(do
        (defn ~prepare-fn-name ~(if (empty? params) [] params)
          ~fn-body)
@@ -71,14 +72,20 @@
 (comment (def sample-pipeline
     [{:type :spout _ _} {:type :bolt _ _} {:type :split-join :split _ :join _ :bolt {:b :p} :or-bolt [:b :b :b _ _]}]))
 
+;; TODO: Modify this to just use a def when params are empty
 (defmacro spipeline [name params & body]
   `(macrolet [(~'add [~'sf] `(~'~'swap!  ~'pipeline# (fn [~'p#] (~'~'into ~'p# [~~'sf]))))]
              (~'defn ~name ~(if params params []) (~'let [pipeline# (~'atom [])]
                                                  ~@body
                                                  {:name (~'str ~name) :sapp (~'deref pipeline#)})))) ;; This doesn't work due to immutability
 
+(defn local-cluster []
+  ;; do this to avoid a cyclic dependency of
+  ;; LocalCluster -> testing -> nimbus -> bootstrap -> clojure -> LocalCluster
+  (eval '(new backtype.storm.LocalCluster)))
+
 (defn run-local! [topology id]
-  (let [cluster (LocalCluster.)]
+  (let [cluster (local-cluster)]
     (.submitTopology cluster "" {TOPOLOGY-DEBUG true} topology)
     (Thread/sleep 600000)
     (.shutdown cluster)))

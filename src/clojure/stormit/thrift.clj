@@ -21,8 +21,8 @@
 (defn is-splitjoin? [f]
   (identical? (:type f) :splitjoin))
 
-(def sample-pipeline
-  [{:type :spout _ _} {:type :bolt _ _} {:type :split-join :split _ :join _ :bolt {:b :p} :or-bolt [:b :b :b _ _]}])
+(comment  (def sample-pipeline
+            [{:type :spout _ _} {:type :bolt _ _} {:type :split-join :split _ :join _ :bolt {:b :p} :or-bolt [:b :b :b _ _]}]))
 
 ;; From Storm Clojure DSL
 (defn mk-shuffle-grouping []
@@ -59,15 +59,15 @@
              curr-f (peek prg-seq)
              prev-f nil]
         (cond
-         (is-spout? curr-f) (let [spout (:spout f)
-                                  name (:name f)]
+         (is-spout? curr-f) (let [spout (:spout curr-f)
+                                  name (:name curr-f)]
                               (-> builder (.setSpout name spout nil) (.addConfigurations {})))
-         (is-bolt? curr-f) (let [bolt (:bolt f)
-                                 name (:name f)
-                                 inputs (:input-spec f)]
-                             (-> builder (.setBolt name bolt nil) (.addConfigurations {} (add-inputs inputs)) (route-pipeline prev-f)))
+         (is-bolt? curr-f) (let [bolt (:bolt curr-f)
+                                 name (:name curr-f)
+                                 inputs (:input-spec curr-f)]
+                             (-> builder (.setBolt name bolt nil) (.addConfigurations {}) (route-pipeline prev-f)))
          (is-splitjoin? curr-f) (let [])
-         :else (throw (RuntimeException. (str "Invalid filter type " (:type f) "!"))))
+         :else (throw (RuntimeException. (str "Invalid filter type " (:type curr-f) "!"))))
         (recur (pop p)
                (peek p)
                curr-f))
