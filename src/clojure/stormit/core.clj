@@ -10,13 +10,13 @@
   {:type :bolt :name name :input-spec input-spec :output-spec output-spec :spout nil :bolt (StreamItBolt. (stormclj/to-spec prep-fn-var) args (stormthrift/mk-output-spec output-spec) (stormthrift/mk-output-spec input-spec) pop-cnt peek-cnt push-cnt)})
 
 (defmacro streamit-bolt [name prep-fn-sym output-spec input-spec peek-cnt pop-cnt push-cnt args]
-  `(streamit-bolt* ~name (var ~prep-fn-sym) ~output-spec ~input-spec ~peek-cnt ~pop-cnt ~push-cnt ~args))
+  `(streamit-bolt* (str ~name) (var ~prep-fn-sym) ~output-spec ~input-spec ~peek-cnt ~pop-cnt ~push-cnt ~args))
 
 (defn streamit-spout* [name prep-fn-var output-spec push-cnt args]
   {:type :spout :name name :output-spec output-spec :input-spec nil :bolt nil :spout (StreamItSpout. (stormclj/to-spec prep-fn-var) args (stormthrift/mk-output-spec output-spec) push-cnt)})
 
 (defmacro streamit-spout [name prep-fn-sym output-spec push-cnt args]
-  `(streamit-spout* ~name (var ~prep-fn-sym) ~output-spec ~push-cnt ~args))
+  `(streamit-spout* (str ~name) (var ~prep-fn-sym) ~output-spec ~push-cnt ~args))
 
 (defmacro spush [tuple]
   `(proxy-super ~'push ~tuple))
@@ -37,6 +37,7 @@
 
 (defmacro sfilter [name params type & body]
   (let [prepare-fn-name (symbol (str name "__prep"))
+        n (str name)
         [input-spec _arrow_ output-spec] type
         [init work] body
         [i init-defs] init
@@ -51,14 +52,14 @@
         definer (if (empty? input-spec)
                   (if (empty? params)
                     `(def ~name
-                       (streamit-spout ~name ~prepare-fn-name ~output-spec ~(:push conf) []))
+                       (streamit-spout ~n ~prepare-fn-name ~output-spec ~(:push conf) []))
                     `(defn ~name [& args#]
-                       (streamit-spout ~name ~prepare-fn-name ~output-spec ~(:push conf) args#)))
+                       (streamit-spout ~n ~prepare-fn-name ~output-spec ~(:push conf) args#)))
                   (if (empty? params)
                     `(def ~name
-                       (streamit-bolt ~name ~prepare-fn-name ~output-spec ~input-spec ~(:peek conf) ~(:pop conf) ~(:push conf) []))
+                       (streamit-bolt ~n ~prepare-fn-name ~output-spec ~input-spec ~(:peek conf) ~(:pop conf) ~(:push conf) []))
                     `(defn ~name [& args#]
-                       (streamit-bolt ~name ~prepare-fn-name ~output-spec ~input-spec ~(:peek conf) ~(:pop conf) ~(:push conf) args#))))]
+                       (streamit-bolt ~n ~prepare-fn-name ~output-spec ~input-spec ~(:peek conf) ~(:pop conf) ~(:push conf) args#))))]
     `(do
        (defn ~prepare-fn-name ~(if (empty? params) [] params)
          ~fn-body)
