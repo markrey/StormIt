@@ -21,18 +21,6 @@
 (defn is-splitjoin? [f]
   (identical? (:type f) :splitjoin))
 
-(defn mk-topology
-  ([spout-map bolt-map]
-    (let [builder (TopologyBuilder.)]
-      (doseq [[name {spout :obj p :p conf :conf}] spout-map]
-        (-> builder (.setSpout name spout (if-not (nil? p) (int p) p)) (.addConfigurations conf)))
-      (doseq [[name {bolt :obj p :p conf :conf inputs :inputs}] bolt-map]
-        (-> builder (.setBolt name bolt (if-not (nil? p) (int p) p)) (.addConfigurations conf) (add-inputs inputs)))
-      (.createTopology builder)
-      ))
-  ([spout-map bolt-map state-spout-map]
-     (mk-topology spout-map bolt-map)))
-
 (def sample-pipeline
   [{:type :spout _ _} {:type :bolt _ _} {:type :split-join :split _ :join _ :bolt {:b :p} :or-bolt [:b :b :b _ _]}])
 
@@ -82,5 +70,6 @@
          :else (throw (RuntimeException. (str "Invalid filter type " (:type f) "!"))))
         (recur (pop p)
                (peek p)
-               curr-f)))
+               curr-f))
+      (.createTopology builder))
     (throw (RuntimeException. "Invalid StormIt application. There should be a source filter at the begining!"))))

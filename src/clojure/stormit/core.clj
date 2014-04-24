@@ -2,6 +2,7 @@
   (:import [stormit BoltFilter SpoutFilter StreamItBolt StreamItSpout])
   (:require [backtype.storm.clojure :as stormclj])
   (:require [backtype.storm.thrift :as stormthrift])
+  (:require [stormit.thrift :as thrift])
   (:use [clojure.tools.macro]))
 
 (defn streamit-bolt* [name prep-fn-var output-spec input-spec peek-cnt pop-cnt push-cnt args]
@@ -67,11 +68,24 @@
 ;; Most simple way to test is have pipeline emit clojure topology.
 ;;
 ;; How about just using vector
-(def sample-pipeline
-  [{:type :spout _ _} {:type :bolt _ _} {:type :split-join :split _ :join _ :bolt {:b :p} :or-bolt [:b :b :b _ _]}])
+(comment (def sample-pipeline
+    [{:type :spout _ _} {:type :bolt _ _} {:type :split-join :split _ :join _ :bolt {:b :p} :or-bolt [:b :b :b _ _]}]))
 
 (defmacro spipeline [name params & body]
   `(macrolet [(~'add [~'sf] `(~'~'swap!  ~'pipeline# (fn [~'p#] (~'~'into ~'p# [~~'sf]))))]
              (~'defn ~name ~(if params params []) (~'let [pipeline# (~'atom [])]
                                                  ~@body
-                                                 (~'deref pipeline#))))) ;; This doesn't work due to immutability
+                                                 {:name (~'str ~name) :sapp (~'deref pipeline#)})))) ;; This doesn't work due to immutability
+
+(defn run-local! [topology id]
+  (let [cluster (LocalCluster.)]
+    (.submitTopology cluster "" {TOPOLOGY-DEBUG true} topology)
+    (Thread/sleep 600000)
+    (.shutdown cluster)))
+
+
+(defn submit-local-stormit-app [app]
+  (let [topology (thrift/mk-topology (:sapp app))]
+    (run-local! topology (:name app))))
+
+(defn submit-remote-stormit-app [app])
