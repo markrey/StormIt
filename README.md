@@ -10,3 +10,16 @@ All the stream processing construct in **StormIt** was borrowed from StreamIt st
 * **Filter** - Filters are the main actors which operates on data streams. Even though [Apache Storm](http://storm.incubator.apache.org) differentiate input sources and stream operators, StormIt uses same filter construct for both. StormIt differentiate sources from stream operators based on its type. StormIt filter type defines fields in tuples it consumes and fields in tuples it produces. 
 * **Pipeline** - Pipeline in **StormIt** is same as pipeline construct in [StreamIt](http://groups.csail.mit.edu/cag/streamit/). Its a sequence of stream operators which process incoming stream one after the other.
 * **Split-Join** (Under development)
+* 
+
+News
+====
+
+* 04/24/2014 10PM - Simple pipelines are working now.
+* 
+
+TODO
+====
+* Implement **Split-Join** support in StormIt.
+* Implement 'Word Count' sample in **StormIt**.
+* Implement 'FIR Filter' in **StormIt**.
