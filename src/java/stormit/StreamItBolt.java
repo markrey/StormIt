@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.lang.Math;
 
 public class StreamItBolt implements IRichBolt, FinishedCallback{
     public static Logger LOG = LoggerFactory.getLogger(StreamItBolt.class);
@@ -101,6 +102,7 @@ public class StreamItBolt implements IRichBolt, FinishedCallback{
     @Override
     public void execute(Tuple tuple) {
         tupleBuffer.add(tuple);
+        long limit = Math.max(peekCount, popCount);
         if(tupleBuffer.size() > peekCount){
             // Copy first peekCount elements from tuple buffer and invoke boltFilter.
             boltFilter.invoke(copyTuples(peekCount));
@@ -147,7 +149,7 @@ public class StreamItBolt implements IRichBolt, FinishedCallback{
         collector.emit(values); // We don't need to support anchor yet because we are not supporting messages id in spout.
     }
 
-    public void pop(){
-        tupleBuffer.pop();
+    public Tuple pop(){
+        return tupleBuffer.pop();
     }
 }

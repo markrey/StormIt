@@ -75,10 +75,11 @@
 
 ;; TODO: Modify this to just use a def when params are empty
 (defmacro spipeline [name params & body]
-  `(macrolet [(~'add [~'sf] `(~'~'swap!  ~'pipeline# (fn [~'p#] (~'~'into ~'p# [~~'sf]))))]
-             (~'defn ~name ~(if params params []) (~'let [pipeline# (~'atom [])]
-                                                 ~@body
-                                                 {:name (~'str ~name) :sapp (~'deref pipeline#)})))) ;; This doesn't work due to immutability
+  (let [n (str name)]
+   `(macrolet [(~'add [~'sf] `(~'~'swap!  ~'pipeline# (fn [~'p#] (~'~'into ~'p# [~~'sf]))))]
+              (~'defn ~name ~(if params params []) (~'let [pipeline# (~'atom [])]
+                                                     ~@body
+                                                     {:name (~'str ~n) :sapp (~'deref pipeline#)}))))) ;; This doesn't work due to immutability
 
 (defn local-cluster []
   ;; do this to avoid a cyclic dependency of
@@ -87,7 +88,7 @@
 
 (defn run-local! [topology id]
   (let [cluster (local-cluster)]
-    (.submitTopology cluster "" {TOPOLOGY-DEBUG true} topology)
+    (.submitTopology cluster id {TOPOLOGY-DEBUG true} topology)
     (Thread/sleep 30000)
     (.shutdown cluster)))
 

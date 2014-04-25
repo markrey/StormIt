@@ -12,26 +12,26 @@ public abstract class BoltFilter implements Serializable{
 
     private LinkedList<Tuple> tuples;
 
-    abstract void execute();
+    public abstract void execute();
 
-    void invoke(LinkedList<Tuple> tuples){
+    public void invoke(LinkedList<Tuple> tuples){
         this.tuples = tuples;
         execute();
     }
 
-    void push(List<Object> values){
+    public void push(List<Object> values){
         streamItBolt.emit(values); // TODO: Fix this properly. Check anchor.
     }
 
-    void pop(){
-        streamItBolt.pop();
+    public Tuple pop(){
+        return streamItBolt.pop();
     }
 
-    Tuple peek(int i){
+    public Tuple peek(int i){
         return tuples.get(i);
     }
 
-    void setStreamItBolt(StreamItBolt streamItBolt){
+    public void setStreamItBolt(StreamItBolt streamItBolt){
         this.streamItBolt = streamItBolt;
     }
 }

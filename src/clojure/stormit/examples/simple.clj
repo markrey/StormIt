@@ -1,5 +1,6 @@
 (ns stormit.examples.simple
-  (:use [stormit.core]))
+  (:use [stormit.core])
+  (:use [clojure.tools.logging :only (info error)]))
 
 (sfilter int-source [] [[] -> ["int"]]
          (init [max 1000])
@@ -11,13 +12,14 @@
 (sfilter incr-and-print [] [["int"] -> []]
          (init [increment 2])
          (work {:pop 1 :push 0 :peek 0}
-               (let [i (spop)]
-                 (print (+ i increment)))))
+               (let [i (.getInteger (spop) 0)]
+                 (info (+ i increment)))))
 
 (spipeline simple-app []
            (add int-source)
            (add incr-and-print))
 
-
-(defn -main []
+(defn submit-app []
   (submit-local-stormit-app (simple-app)))
+(defn -main []
+  (submit-app))
