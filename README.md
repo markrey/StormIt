@@ -15,7 +15,7 @@ All the stream processing construct in **StormIt** was borrowed from StreamIt st
 Sample
 ======
 
-Sample **StormIt** input source.
+Simple input source.
 
 ```clojure
 
@@ -27,6 +27,24 @@ Sample **StormIt** input source.
                  (spush [i]))))
 ```
 
+Simple stream operator.
+
+```clojure
+(sfilter incr-and-print [] [["int"] -> []]
+         (init [increment 2])
+         (work {:pop 1 :push 0 :peek 0}
+               (let [i (.getInteger (spop) 0)]
+                 (info (+ i increment)))))
+
+```
+
+Sample stream processing pipeline in StormIt.
+
+```clojure
+(spipeline simple-app []
+           (add int-source)
+           (add incr-and-print))
+```
 News
 ====
 

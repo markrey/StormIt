@@ -81,6 +81,10 @@
                                                      ~@body
                                                      {:name (~'str ~n) :sapp (~'deref pipeline#)}))))) ;; This doesn't work due to immutability
 
+(defmacro ssplit-join [name params & body]
+  )
+
+
 (defn local-cluster []
   ;; do this to avoid a cyclic dependency of
   ;; LocalCluster -> testing -> nimbus -> bootstrap -> clojure -> LocalCluster
