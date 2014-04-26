@@ -12,6 +12,21 @@ All the stream processing construct in **StormIt** was borrowed from StreamIt st
 * **Split-Join** (Under development)
 * 
 
+Sample
+======
+
+Sample **StormIt** input source.
+
+```clojure
+
+(sfilter int-source [] [[] -> ["int"]]
+         (init [max 1000])
+         (work {:push 1}
+               (let [i (rand-int max)]
+                 (Thread/sleep 100)
+                 (spush [i]))))
+```
+
 News
 ====
 
