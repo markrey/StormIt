@@ -1,10 +1,12 @@
 (ns stormit.core
+  (:refer-clojure :exclude [filter pop push peek])
   (:import [stormit BoltFilter SpoutFilter StreamItBolt StreamItSpout])
   (:require [backtype.storm.clojure :as stormclj])
   (:require [backtype.storm.thrift :as stormthrift])
   (:require [stormit.thrift :as thrift])
   (:use [backtype.storm config])
   (:use [clojure.tools.macro]))
+
 
 (defn streamit-bolt* [name prep-fn-var output-spec input-spec peek-cnt pop-cnt push-cnt args]
   {:type :bolt :name name :input-spec input-spec :output-spec output-spec :spout nil :bolt (StreamItBolt. (stormclj/to-spec prep-fn-var) args (stormthrift/mk-output-spec output-spec) (stormthrift/mk-output-spec input-spec) pop-cnt peek-cnt push-cnt)})
@@ -18,13 +20,13 @@
 (defmacro streamit-spout [name prep-fn-sym output-spec push-cnt args]
   `(streamit-spout* (str ~name) (var ~prep-fn-sym) ~output-spec ~push-cnt ~args))
 
-(defmacro spush [tuple]
+(defmacro push [tuple]
   `(proxy-super ~'push ~tuple))
 
-(defmacro spop []
+(defmacro pop []
   `(proxy-super ~'pop))
 
-(defmacro speek [i]
+(defmacro peek [i]
   `(proxy-super ~'peek ~i))
 
 (defmacro spout [& body]
@@ -35,7 +37,7 @@
   `(proxy [BoltFilter] []
      ~@body))
 
-(defmacro sfilter [name params type & body]
+(defmacro filter [name params type & body]
   (let [prepare-fn-name (symbol (str name "__prep"))
         n (str name)
         [input-spec _arrow_ output-spec] type
@@ -74,16 +76,20 @@
     [{:type :spout _ _} {:type :bolt _ _} {:type :split-join :split _ :join _ :bolt {:b :p} :or-bolt [:b :b :b _ _]}]))
 
 ;; TODO: Modify this to just use a def when params are empty
-(defmacro spipeline [name params & body]
+(defmacro pipeline [name params & body]
   (let [n (str name)]
    `(macrolet [(~'add [~'sf] `(~'~'swap!  ~'pipeline# (fn [~'p#] (~'~'into ~'p# [~~'sf]))))]
               (~'defn ~name ~(if params params []) (~'let [pipeline# (~'atom [])]
                                                      ~@body
                                                      {:name (~'str ~n) :sapp (~'deref pipeline#)}))))) ;; This doesn't work due to immutability
 
-(defmacro ssplit-join [name params & body]
-  )
-
+(comment
+  (ssplit-join bpf-core [rate low taps]
+               (split :roundrobin)
+               (add wrod-count)
+               (add word-count)
+               (add word-count)
+               (join :field)))
 
 (defn local-cluster []
   ;; do this to avoid a cyclic dependency of
