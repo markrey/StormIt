@@ -8,6 +8,49 @@
   (:use [clojure.tools.macro]))
 
 
+; 1st Design of StormIt
+; ~~~~~~~~~~~~~~~~~
+
+; (stormit/filter int-source [] [[] -> ["int"]]
+;   (init [max 1000])
+;   (work {:push 1}
+;     (let [i (rand-int max)]
+;       (Thread/sleep 100)
+;       (stormit/push [i]))))
+
+; (stormit/filter incr-and-print [] [["int"] -> []]
+;   (init [increment 2])
+;   (work {:pop 1 :push 0 :peek 0}
+;     (let [i (nth (stormit/pop) 0)]
+;       (info (+ i increment)))))
+;
+; Above vs pure one-to-one mapping of StreamIt to Storm
+; But when trying to figure out how to design the language to support time based
+; sliding windows, I read the CQL paper (http://dl.acm.org/citation.cfm?id=1146463).
+; This gives the idea of using something similar to range, slide and rows discussed
+; in CQL paper  instead of using push, pop, peek counts which doesn't mean much in
+; Storm based distributed real-time computing.
+;
+; 2nd Design of StormIt
+; ~~~~~~~~~~~~~~~~~~~~~
+
+; (stormit/filter incr-and-print [] [["int"] -> []]
+;   (init [increment 2])
+;   (work {:rows num_rows or :range seconds :slide num_slides}
+;     ))
+;
+; In above work scope context contains the real computation. Map passed to the work
+; macro as the first argument contains the work function configuration. ':rows' define
+; the size of tuple based sliding window. ':range' defines the time span of the time
+; based sliding window. We can use one or the other in work configuration but not both.
+; ':slide' define how we move the sliding window. If ':range' is used ':slide' defaults
+; to seconds, otherwise number of elements. ':range' value is alsways in seconds.
+; If ':range' is 'now' that means we don't maintain a sliding window. If ':rows' is used
+; and equal to 1, that also means we don't maintain sliding window.
+;
+; Then next problem is how we give access to the sliding window for the computations.
+
+
 (defn streamit-bolt* [name prep-fn-var output-spec input-spec peek-cnt pop-cnt push-cnt args]
   {:type :bolt :name name :input-spec input-spec :output-spec output-spec :spout nil :bolt (StreamItBolt. (stormclj/to-spec prep-fn-var) args (stormthrift/mk-output-spec output-spec) (stormthrift/mk-output-spec input-spec) pop-cnt peek-cnt push-cnt)})
 
@@ -33,7 +76,7 @@
   `(proxy [SpoutFilter] []
      ~@body))
 
-(defmacro bolt [& body] ;; We may need to look at how bolt works in original Storm DSL.
+(defmacro bolt [& body]                                     ;; We may need to look at how bolt works in original Storm DSL.
   `(proxy [BoltFilter] []
      ~@body))
 
@@ -73,13 +116,13 @@
 ;;
 ;; How about just using vector
 (comment (def sample-pipeline
-    [{:type :spout _ _} {:type :bolt _ _} {:type :split-join :split _ :join _ :bolt {:b :p} :or-bolt [:b :b :b _ _]}]))
+           [{:type :spout _ _} {:type :bolt _ _} {:type :split-join :split _ :join _ :bolt {:b :p} :or-bolt [:b :b :b _ _]}]))
 
 ;; TODO: Modify this to just use a def when params are empty
 (defmacro pipeline [name params & body]
   (let [n (str name)]
-   `(macrolet [(~'add [~'sf] `(~'~'swap!  ~'pipeline# (fn [~'p#] (~'~'into ~'p# [~~'sf]))))]
-              (~'defn ~name ~(if params params []) (~'let [pipeline# (~'atom [])]
+    `(macrolet [(~'add [~'sf] `(~'~'swap! ~'pipeline# (fn [~'p#] (~'~'into ~'p# [~~'sf]))))]
+               (~'defn ~name ~(if params params []) (~'let [pipeline# (~'atom [])]
                                                      ~@body
                                                      {:name (~'str ~n) :sapp (~'deref pipeline#)}))))) ;; This doesn't work due to immutability
 
@@ -89,7 +132,11 @@
                (add wrod-count)
                (add word-count)
                (add word-count)
-               (join :field)))
+               (join :field)))                              ;; How join happens. What is round robin join. How about field based join.
+
+(comment (defmacro split-join [name params body]
+           (let [n (str name)]
+             )))
 
 (defn local-cluster []
   ;; do this to avoid a cyclic dependency of
