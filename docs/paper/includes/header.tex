@@ -1,0 +1,54 @@
+\documentclass{sig-alternate}
+
+%\usepackage[urw-garamond]{mathdesign}
+%\usepackage[T1]{fontenc}
+
+\usepackage{hyperref}
+\usepackage{longtable, booktabs}
+
+\usepackage{array}
+\usepackage{tabulary}
+
+
+% SIG Alternate copyright removal
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd{\maketitle}{\@copyrightspace}{}{}{}
+\makeatother
+
+\usepackage[usenames,dvipsnames]{color}
+
+
+\begin{document}
+%
+% --- Author Metadata here ---
+\CopyrightYear{2014} % Allows default copyright year (20XX) to be over-ridden - IF NEED BE.
+%\crdata{0-12345-67-8/90/01}  % Allows default copyright data (0-89791-88-6/97/05) to be over-ridden - IF NEED BE.
+% --- End of Author Metadata ---
+
+\title{StormIt: StreamIt Style Programming Model for Distributed Stream Processing}
+
+\numberofauthors{2}
+
+\author{
+% 1st. author
+\alignauthor
+Milinda Pathirage\\
+       \affaddr{School of Informatics and Computing}\\
+       \affaddr{Indiana University}\\
+       \email{mpathira@indiana.edu}
+% 2nd. author
+\alignauthor
+Ryan Newton\\
+       \affaddr{School of Informatics and Computing}\\
+       \affaddr{Indiana University}\\
+       \email{rrnewton@indiana.edu}
+}
+
+\maketitle
+\begin{abstract}
+  StreamIt introduced a programming model built around \texti{stream} abstraction to make it easy to
+  develop and reason about streaming applications such as software radio, etc. StormIt adapts
+  \texit{relaxed} version of StreamIt programming model to distributed stream processing as a way of
+  improving productivity and robustness of developing distributed stream processing applications.
+\end{abstract}
